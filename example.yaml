@@ -3,7 +3,7 @@ apiVersion: kubevirt.io/v1
 kind: VirtualMachineInstance
 metadata:
   annotations:
-    hooks.kubevirt.io/hookSidecars: '[{"args": ["--version", "v1alpha2"], "image": "registry:5000/kubevirt/example-hook-sidecar:devel"}]'
+    hooks.kubevirt.io/hookSidecars: '[{"args": ["--version", "v1alpha2"], "image": "ghcr.io/kincl/usbredir-hook:latest"}]'
     usbredir.vm.kubevirt.io/vendorProduct: "1050:0407"
   labels:
     special: vmi-with-sidecar-hook
