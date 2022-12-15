@@ -1,6 +1,6 @@
 FROM golang:1.19-bullseye
 
-RUN apt-get update && apt-get install libusb
+RUN apt-get update && apt-get install -y libusb
 
 WORKDIR /usr/src/app
 
