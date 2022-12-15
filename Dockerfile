@@ -1,5 +1,7 @@
 FROM golang:1.19-bullseye
 
+RUN apt-get update && apt-get install libusb
+
 WORKDIR /usr/src/app
 
 COPY go.mod go.sum ./
