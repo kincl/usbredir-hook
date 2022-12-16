@@ -10,7 +10,9 @@ RUN go mod download && go mod verify
 COPY . .
 RUN go build -o usbredir-hook
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:latest
+FROM registry.access.redhat.com/ubi9/ubi:latest
+
+RUN dnf -y install http://mirror.stream.centos.org/9-stream/BaseOS/x86_64/os/Packages/libusbx-1.0.26-1.el9.x86_64.rpm
 
 COPY --from=build /usr/src/app/usbredir-hook /usbredir-hook
 
