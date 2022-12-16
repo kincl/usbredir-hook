@@ -182,9 +182,11 @@ func onDefineDomain(vmiJSON []byte, domainXML []byte) ([]byte, error) {
 	}
 	if err != nil {
 		log.Log.Errorf("OpenDevices(): %v", err)
+		return domainXML, nil
 	}
 	if len(devs) == 0 {
 		log.Log.Errorf("no devices found matching VID %s and PID %s", vid, pid)
+		return domainXML, nil
 	}
 
 	// Pick the first device found.
@@ -212,11 +214,10 @@ func onDefineDomain(vmiJSON []byte, domainXML []byte) ([]byte, error) {
 	newDomainXML, err := xml.Marshal(domainSpec)
 	if err != nil {
 		log.Log.Reason(err).Errorf("Failed to marshal updated domain spec: %+v", domainSpec)
-		panic(err)
+		return domainXML, nil
 	}
 
 	log.Log.Info("Successfully updated original domain spec with requested attributes")
-
 	return newDomainXML, nil
 }
 
