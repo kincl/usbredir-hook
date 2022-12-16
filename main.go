@@ -117,14 +117,14 @@ func onDefineDomain(vmiJSON []byte, domainXML []byte) ([]byte, error) {
 		return domainXML, nil
 	}
 
+	log.Log.Infof("got annotation %s: %s", vendorProductAnnotation, annotations[vendorProductAnnotation])
+
 	vpid := strings.Split(annotations[vendorProductAnnotation], ":")
 	vidu64, _ := strconv.ParseUint(vpid[0], 16, 16)
 	vid := gousb.ID(uint16(vidu64))
 
 	pidu64, _ := strconv.ParseUint(vpid[1], 16, 16)
 	pid := gousb.ID(uint16(pidu64))
-
-	log.Log.Infof("got %s:%s\n", vid, pid)
 
 	/*
 		...
@@ -176,7 +176,6 @@ func onDefineDomain(vmiJSON []byte, domainXML []byte) ([]byte, error) {
 	devs, err := ctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
 		// this function is called for every device present.
 		// Returning true means the device should be opened.
-		log.Log.Infof("found %03d.%03d %s:%s %s\n", desc.Bus, desc.Address, desc.Vendor, desc.Product, usbid.Describe(desc))
 		return desc.Vendor == vid && desc.Product == pid
 	})
 	// All returned devices are now open and will need to be closed.
