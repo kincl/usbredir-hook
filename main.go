@@ -30,6 +30,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 	"google.golang.org/grpc"
 
@@ -119,13 +120,6 @@ func onDefineDomain(vmiJSON []byte, domainXML []byte) ([]byte, error) {
 
 	log.Log.Infof("got annotation %s: %s", vendorProductAnnotation, annotations[vendorProductAnnotation])
 
-	vpid := strings.Split(annotations[vendorProductAnnotation], ":")
-	vidu64, _ := strconv.ParseUint(vpid[0], 16, 16)
-	vid := gousb.ID(uint16(vidu64))
-
-	pidu64, _ := strconv.ParseUint(vpid[1], 16, 16)
-	pid := gousb.ID(uint16(pidu64))
-
 	/*
 		...
 		<devices>
@@ -167,33 +161,11 @@ func onDefineDomain(vmiJSON []byte, domainXML []byte) ([]byte, error) {
 	domainSpec := &libvirtxml.Domain{}
 	xml.Unmarshal([]byte(domainXML), &domainSpec)
 
-	// Initialize a new Context.
-	ctx := gousb.NewContext()
-	defer ctx.Close()
-
-	// Iterate through available Devices, finding all that match a known VID/PID.
-	// vid, pid := gousb.ID(0x1050), gousb.ID(0x0407)
-	devs, err := ctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
-		// this function is called for every device present.
-		// Returning true means the device should be opened.
-		return desc.Vendor == vid && desc.Product == pid
-	})
-	// All returned devices are now open and will need to be closed.
-	for _, d := range devs {
-		defer d.Close()
-	}
+	dev, err := getUSB(annotations[vendorProductAnnotation])
 	if err != nil {
-		log.Log.Errorf("OpenDevices(): %v", err)
+		log.Log.Errorf("error in getUSB(): %s", err)
 		return domainXML, nil
 	}
-	if len(devs) == 0 {
-		log.Log.Errorf("no devices found matching VID %s and PID %s", vid, pid)
-		return domainXML, nil
-	}
-
-	// Pick the first device found.
-	dev := devs[0]
-	log.Log.Infof("found %03d.%03d %s:%s %s\n", dev.Desc.Bus, dev.Desc.Address, dev.Desc.Vendor, dev.Desc.Product, usbid.Describe(dev.Desc))
 
 	bus := uint(dev.Desc.Bus)
 	device := uint(dev.Desc.Address)
@@ -223,12 +195,54 @@ func onDefineDomain(vmiJSON []byte, domainXML []byte) ([]byte, error) {
 	return newDomainXML, nil
 }
 
+func getUSB(vendorProduct string) (*gousb.Device, error) {
+	vpid := strings.Split(vendorProduct, ":")
+	vidu64, _ := strconv.ParseUint(vpid[0], 16, 16)
+	vid := gousb.ID(uint16(vidu64))
+
+	pidu64, _ := strconv.ParseUint(vpid[1], 16, 16)
+	pid := gousb.ID(uint16(pidu64))
+
+	// Initialize a new Context.
+	ctx := gousb.NewContext()
+	defer ctx.Close()
+
+	// Iterate through available Devices, finding all that match a known VID/PID.
+	devs, err := ctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
+		// this function is called for every device present.
+		// Returning true means the device should be opened.
+		log.Log.Infof("%s:%s %s:%s", vid, pid, desc.Vendor, desc.Product)
+		return desc.Vendor == vid && desc.Product == pid
+	})
+	// All returned devices are now open and will need to be closed.
+	for _, d := range devs {
+		defer d.Close()
+	}
+	if err != nil {
+		return nil, errors.Wrap(err, "OpenDevices()")
+	}
+	if len(devs) == 0 {
+		return nil, errors.New("no devices found matching VID and PID")
+	}
+
+	// Pick the first device found.
+	log.Log.Infof("found %03d.%03d %s:%s %s", devs[0].Desc.Bus, devs[0].Desc.Address, devs[0].Desc.Vendor, devs[0].Desc.Product, usbid.Describe(devs[0].Desc))
+	return devs[0], nil
+}
+
 func main() {
 	log.InitializeLogging("usbredir-hook")
 
 	var version string
+	var vendorProduct string
 	pflag.StringVar(&version, "version", "", "hook version to use")
+	pflag.StringVar(&vendorProduct, "vendorProduct", "", "test vendor:product")
 	pflag.Parse()
+
+	if vendorProduct != "" {
+		fmt.Println(getUSB(vendorProduct))
+		os.Exit(0)
+	}
 
 	socketPath := filepath.Join(hooks.HookSocketsSharedDirectory, "smbios.sock")
 	socket, err := net.Listen("unix", socketPath)
