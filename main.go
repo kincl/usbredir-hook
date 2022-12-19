@@ -42,8 +42,8 @@ import (
 	hooksV1alpha1 "kubevirt.io/kubevirt/pkg/hooks/v1alpha1"
 	hooksV1alpha2 "kubevirt.io/kubevirt/pkg/hooks/v1alpha2"
 
-	"github.com/google/gousb"
-	"github.com/google/gousb/usbid"
+	"github.com/kincl/usbredir-hook/gousb"
+	"github.com/kincl/usbredir-hook/gousb/usbid"
 	"libvirt.org/go/libvirtxml"
 )
 
@@ -211,7 +211,6 @@ func getUSB(vendorProduct string) (*gousb.Device, error) {
 	devs, err := ctx.OpenDevices(func(desc *gousb.DeviceDesc) bool {
 		// this function is called for every device present.
 		// Returning true means the device should be opened.
-		log.Log.Infof("%s:%s %s:%s", vid, pid, desc.Vendor, desc.Product)
 		return desc.Vendor == vid && desc.Product == pid
 	})
 	// All returned devices are now open and will need to be closed.
