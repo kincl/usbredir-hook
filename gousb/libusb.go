@@ -348,9 +348,9 @@ func (libusbImpl) dereference(d *libusbDevice) {
 
 func (libusbImpl) open(d *libusbDevice) (*libusbDevHandle, error) {
 	var handle *C.libusb_device_handle
-	if err := fromErrNo(C.libusb_open((*C.libusb_device)(d), &handle)); err != nil {
-		return nil, err
-	}
+	// if err := fromErrNo(C.libusb_open((*C.libusb_device)(d), &handle)); err != nil {
+	// 	return nil, err
+	// }
 	return (*libusbDevHandle)(handle), nil
 }
 
