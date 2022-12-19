@@ -3,7 +3,6 @@ module github.com/kincl/usbredir-hook
 go 1.18
 
 require (
-	github.com/google/gousb v1.1.2
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.5
 	google.golang.org/grpc v1.40.0
